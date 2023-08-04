@@ -14,14 +14,14 @@ export default function Welcome() {
             fontSize: wp(10),
           }}
           className="font-bold text-center text-gray-800">
-          Timo
+          ChatGPT
         </Text>
         <Text
           style={{
             fontSize: wp(4),
           }}
           className="font-semibold text-center text-gray-600 tracking-wider">
-          Ask timo everything
+          Ask ChatGPT everything
         </Text>
       </View>
       <View className="flex-row justify-center">
