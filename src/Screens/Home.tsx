@@ -13,18 +13,53 @@ import {
 } from 'react-native-responsive-screen';
 import Features from '../Components/Features';
 import {dummyMessages} from '../Constants';
+import Voice from '@react-native-community/voice';
 
 export default function Home() {
   const [messages, setMessages] = React.useState(dummyMessages);
   const [recording, setRecording] = React.useState(false);
   const [speaking, setSpeaking] = React.useState(false);
+  const [result, setResult] = React.useState('');
 
+  const onSpeechStartHandler = e => {
+    console.log('recording start');
+  };
+  const onSpeechEndHandler = e => {
+    console.log('recording end');
+  };
+  const onSpeechResultsHandler = e => {
+    console.log('speech:', e);
+    setResult(e.value[0]);
+  };
+  const onSpeechErrorHandler = e => {
+    console.log('');
+  };
+
+  const starRecording = async () => {
+    setRecording(true);
+
+    await Voice.start('en-GB');
+  };
+  const stopRecording = async () => {
+    setRecording(false);
+
+    await Voice.stop();
+  };
   const clear = () => {
     setMessages([]);
   };
   const stopSpeaking = () => {
     setSpeaking(false);
   };
+  React.useEffect(() => {
+    Voice.onSpeechStart = onSpeechStartHandler;
+    Voice.onSpeechEnd = onSpeechEndHandler;
+    Voice.onSpeechResults = onSpeechResultsHandler;
+    Voice.onSpeechError = onSpeechErrorHandler;
+    return () => {
+      Voice.destroy().then(Voice.removeAllListeners);
+    };
+  }, []);
 
   return (
     <View className="flex-1 bg-white">
@@ -99,7 +134,9 @@ export default function Home() {
           {
             //if recording is true then show stop button
             recording ? (
-              <TouchableOpacity className="rounded-full">
+              <TouchableOpacity
+                className="rounded-full"
+                onPress={stopRecording}>
                 <Image
                   source={require('../../assests/img/voiceLoading.gif')}
                   style={{height: hp(10), width: hp(10)}}
@@ -108,7 +145,7 @@ export default function Home() {
             ) : (
               <TouchableOpacity
                 className="rounded-full"
-                onPress={() => setRecording(!recording)}>
+                onPress={starRecording}>
                 <Image
                   source={require('../../assests/img/recordingIcon.png')}
                   style={{height: hp(10), width: hp(10)}}
