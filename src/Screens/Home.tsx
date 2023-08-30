@@ -5,8 +5,10 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
+  TextInput,
+  Alert,
 } from 'react-native';
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -14,12 +16,15 @@ import {
 import Features from '../Components/Features';
 import {dummyMessages} from '../Constants';
 import Voice from '@react-native-community/voice';
+import {apiCall} from '../Api/OpenAi';
 
 export default function Home() {
-  const [messages, setMessages] = React.useState(dummyMessages);
+  const [messages, setMessages] = React.useState([]);
   const [recording, setRecording] = React.useState(false);
   const [speaking, setSpeaking] = React.useState(false);
   const [result, setResult] = React.useState('');
+  const [text, setText] = React.useState('');
+  const scrollViewRef = useRef();
 
   const onSpeechStartHandler = e => {
     console.log('recording start');
@@ -41,9 +46,41 @@ export default function Home() {
     await Voice.start('en-GB');
   };
   const stopRecording = async () => {
-    setRecording(false);
+    try {
+      await Voice.stop();
+      setRecording(false);
+      fetchResponse();
+    } catch (error) {
+      console.log('error', error);
+    }
+  };
+  const fetchResponse = async () => {
+    if (result.trim().length > 0) {
+      // setLoading(true);
+      let newMessages = [...messages];
+      newMessages.push({role: 'user', content: result.trim()});
+      setMessages([...newMessages]);
 
-    await Voice.stop();
+      // scroll to the bottom of the view
+      updateScrollView();
+
+      // fetching response from chatGPT with our prompt and old messages
+      apiCall(result.trim(), newMessages).then(res => {
+        // setLoading(false);
+        if (res.success) {
+          setMessages([...res.data]);
+          setResult('');
+          updateScrollView();
+        } else {
+          Alert.alert('Error', res.msg);
+        }
+      });
+    }
+  };
+  const updateScrollView = () => {
+    setTimeout(() => {
+      scrollViewRef?.current?.scrollToEnd({animated: true});
+    }, 200);
   };
   const clear = () => {
     setMessages([]);
@@ -65,10 +102,10 @@ export default function Home() {
     <View className="flex-1 bg-white">
       <SafeAreaView className="flex-1 flex mx-5">
         <View className="flex-row justify-center">
-          <Image
+          {/* <Image
             source={require('../../assests/img/logo.png')}
             style={{height: hp(15), width: hp(15)}}
-          />
+          /> */}
         </View>
         {messages.length > 0 ? (
           <View className="flex-1 space-y-2">
@@ -82,6 +119,7 @@ export default function Home() {
               className="rounded-3xl bg-neutral-200 p-4">
               <ScrollView
                 className="space-y-4"
+                ref={scrollViewRef}
                 style={{height: hp(58)}}
                 showsVerticalScrollIndicator={false}>
                 {messages.map((message, index) => {
@@ -129,6 +167,9 @@ export default function Home() {
         ) : (
           <Features />
         )}
+        {/* <View className="flex justify-center items-center h-4 w-4">
+          <TextInput onChangeText={() => {}} value={text} className="h-4 w-4"/>
+        </View> */}
         {/* buttons */}
         <View className="flex justify-center items-center">
           {
